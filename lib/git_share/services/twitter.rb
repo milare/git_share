@@ -15,12 +15,17 @@ module GitShare
           access_token
         end
 
+        def generate_access_token(token, secret)
+          token_hash = {:oauth_token => token, :oauth_token_secret => secret}
+          OAuth::AccessToken.from_hash(consumer, token_hash )
+        end
+
         def authorized?(access_token)
           oauth_response = access_token.get('/account/verify_credentials.json')
           return oauth_response.class == Net::HTTPOK
         end
 
-        def request_authorization
+        def request_authorization(username)
           request_token = consumer.get_request_token
           puts "Twitter Authorization"
           puts "Type the following URL in your browser:"
@@ -30,32 +35,24 @@ module GitShare
           puts "Registering PIN..."
           access_token = authorize(request_token, pin)
 
-          if (authorized? access_token) && (register_client(access_token))
+          if (authorized? access_token) && (register_client(username, access_token, pin))
             puts "Client registered successfully!"
           else
             puts "Client not registered, try again!"
           end
         end
 
-        def register_client(access_token)
-          config = GitShare.read_config_file
-          if config && config['twitter'] && config['twitter']['username']
-            username = config['twitter']['username']
-            client = Client.find(:first, :conditions => { :username => username })
-            if client
-              client.update_attributes(:serialized_access_token => Marshal.dump(access_token))
-            else
-              client = Client.new(:username => username, :serialized_access_token => Marshal.dump(access_token))
-              return false if !client.save
-            end
-            true
+        def register_client(username, access_token, pin)
+          client = Client.find(:first, :conditions => { :twitter_username => username })
+          if client
+            client.update_attributes(:twitter_oauth_token => access_token.token,
+                                     :twitter_oauth_secret => access_token.secret,
+                                     :twitter_pin => pin)
           else
             false
           end
         end
-
       end
-
     end
   end
 end
