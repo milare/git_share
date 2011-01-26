@@ -1,0 +1,21 @@
+development:
+  adapter: mysql
+  encoding: utf8
+  username: root
+  database:  go_dev
+  socket: /tmp/mysql.sock
+
+test:
+  adapter: mysql
+  encoding: utf8
+  username: root
+  database: go_test
+  socket: /tmp/mysql.sock
+
+production:
+  adapter: mysql
+  encoding: utf8
+  username: root
+  database: go_prod
+  socket: /tmp/mysql.sock
+
