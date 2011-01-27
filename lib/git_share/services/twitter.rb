@@ -6,7 +6,12 @@ module GitShare
       class << self
 
         def consumer
-          OAuth::Consumer.new( CONSUMER_KEY, CONSUMER_SECRET,{:site => "http://api.twitter.com", :scheme => :header })
+          options = {:site => "http://api.twitter.com", :scheme => :header }
+          proxy = ENV['http_proxy']
+          if proxy && !proxy.empty?
+            options[:request_endpoint] = proxy
+          end
+          OAuth::Consumer.new( CONSUMER_KEY, CONSUMER_SECRET, options)
         end
 
         def authorize(request, pin)
@@ -25,7 +30,7 @@ module GitShare
           return oauth_response.class == Net::HTTPOK
         end
 
-        def request_authorization(username)
+        def request_authorization
           request_token = consumer.get_request_token
           puts "Twitter Authorization"
           puts "Type the following URL in your browser:"
@@ -35,21 +40,40 @@ module GitShare
           puts "Registering PIN..."
           access_token = authorize(request_token, pin)
 
-          if (authorized? access_token) && (register_client(username, access_token, pin))
+          if (authorized? access_token) && (client = register_client(access_token, pin))
             puts "Client registered successfully!"
+            client
           else
             puts "Client not registered, try again!"
+            nil
           end
         end
 
-        def register_client(username, access_token, pin)
-          client = Client.find(:first, :conditions => { :twitter_username => username })
-          if client
-            client.update_attributes(:twitter_oauth_token => access_token.token,
-                                     :twitter_oauth_secret => access_token.secret,
-                                     :twitter_pin => pin)
+        def register_client(access_token, pin)
+          config = GitShare.read_config_file
+          if config && config['twitter'] && config['twitter']['username']
+            username = config['twitter']['username']
+            if username && !username.empty?
+              client = Client.find(:first, :conditions => { :twitter_username => username })
+              if client
+                client.update_attributes(:twitter_oauth_token => access_token.token,
+                                         :twitter_oauth_secret => access_token.secret,
+                                         :twitter_pin => pin)
+              else
+                client = Client.new(:twitter_username => username,
+                           :twitter_oauth_token => access_token.token,
+                           :twitter_oauth_secret => access_token.secret,
+                           :twitter_pin => pin)
+                client.save
+              end
+              client
+            else
+              puts "Check you config file, maybe the twitter username is blank."
+              nil
+            end
           else
-            false
+            puts "Configuration cannot be found."
+            nil
           end
         end
       end
