@@ -10,7 +10,7 @@ module GitShare
           options = {:site => TWITTER_API, :scheme => :header }
           proxy = ENV['http_proxy']
           if proxy && !proxy.empty?
-            options[:request_endpoint] = proxy
+            options[:proxy] = proxy
           end
           OAuth::Consumer.new( CONSUMER_KEY, CONSUMER_SECRET, options)
         end
