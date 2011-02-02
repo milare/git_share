@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "Twitting your commit ..."
+/usr/bin/ruby .git/git_share.rb `git log -1 --pretty="%ae %s"`
+
