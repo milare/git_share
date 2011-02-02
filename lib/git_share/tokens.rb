@@ -25,7 +25,12 @@ module GitShare
       end
 
       def register(attrs)
-        file = File.open(TOKENS_FILE)
+        if !File.exists? TOKENS_FILE
+          file = File.new(TOKENS_FILE, "w+")
+        else
+          file = File.open(TOKENS_FILE)
+        end
+
         network = attrs[:network].to_s
         user = attrs[:user]
         already_registered = false

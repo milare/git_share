@@ -9,9 +9,14 @@ module GitShare
   end
 end
 
-user = ARGV[0]
-message = ARGV[1...ARGV.size].join(' ')
+if ARGV[0] == "register_twitter"
+  user = ARGV[1]
+  GitShare::Twitter::Authorization.request_authorization(user)
+else
+  user = ARGV[0]
+  message = ARGV[1...ARGV.size].join(' ')
 
-if user && message
-  GitShare::Twitter::Publish.tweet(user, message)
+  if user && message
+    GitShare::Twitter::Publish.tweet(user, message)
+  end
 end

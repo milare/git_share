@@ -51,16 +51,10 @@ module GitShare
         end
 
         def add_user(user, access_token)
-          tokens = GitShare::Tokens.read_tokens_file
-          if tokens
-            GitShare::Tokens.register(:network => :twitter,
-                                      :user => user,
-                                      :key => access_token.token,
-                                      :secret => access_token.secret)
-          else
-            puts "Token cannot be found."
-            false
-          end
+          GitShare::Tokens.register(:network => :twitter,
+                                    :user => user,
+                                    :key => access_token.token,
+                                    :secret => access_token.secret)
         end
       end
     end
@@ -84,10 +78,8 @@ module GitShare
                 begin
                   token = access_token.request(:post, UPDATE_URL,{'Content-Type' => 'application/xml','status' => text})
                   if token.class == Net::HTTPUnauthorized
-                    puts "Your twitter token has expired, requesting a new one ..."
-                    if GitShare::Twitter::Authorization.request_authorization(user)
-                      tweet(user,text)
-                    end
+                    puts "Your twitter token has expired, to request a new one ..."
+                    puts "run: /usr/bin/ruby .git/git_share.rb register_twitter foo@bar.com"
                   else
                     puts "Tweet sent!"
                   end
@@ -97,10 +89,8 @@ module GitShare
               end
             end
           else
-            puts "We dont have twitter authorization, performing request ..."
-            if GitShare::Twitter::Authorization.request_authorization(user)
-              tweet(user, text)
-            end
+            puts "We dont have twitter authorization."
+            puts "run: /usr/bin/ruby .git/git_share.rb register_twitter foo@bar.com"
           end
         end
       end
