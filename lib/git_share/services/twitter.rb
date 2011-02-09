@@ -43,9 +43,11 @@ module GitShare
 
           if (authorized? access_token) && (add_user(user, access_token))
             puts "User #{user} registered successfully!"
+            $LOG.info "#{user} registered."
             true
           else
             puts "User #{user} not registered, try again!"
+            $LOG.error "#{user} not registered."
             nil
           end
         end
@@ -66,32 +68,49 @@ module GitShare
       class << self
 
         def tweet(user, text)
-          tokens = GitShare::Tokens.read_tokens_file
 
-          if tokens && tokens[:twitter] && tokens[:twitter][user]
-            user_token = tokens[:twitter][user]
-          
-            if user_token[:key] && user_token[:secret]
-              access_token = Authorization.generate_access_token(user_token[:key], user_token[:secret])
-          
-              if access_token
-                begin
-                  token = access_token.request(:post, UPDATE_URL,{'Content-Type' => 'application/xml','status' => text})
-                  if token.class == Net::HTTPUnauthorized
-                    puts "Your twitter token has expired, to request a new one ..."
-                    puts "run: /usr/bin/ruby .git/git_share.rb register_twitter foo@bar.com"
-                  else
-                    puts "Tweet sent!"
+          if text.match /#(.)?t/
+            text = text[0...135]
+            tokens = GitShare::Tokens.read_tokens_file
+
+            if tokens && tokens[:twitter] && tokens[:twitter][user]
+              user_token = tokens[:twitter][user]
+            
+              if user_token[:key] && user_token[:secret]
+                access_token = Authorization.generate_access_token(user_token[:key], user_token[:secret])
+            
+                if access_token
+                  begin
+                    token = access_token.request(:post, UPDATE_URL,{'Content-Type' => 'application/xml','status' => text})
+                    if token.class == Net::HTTPUnauthorized
+                      puts "Your twitter token has expired, to request a new one ..."
+                      puts "run:\n/usr/bin/ruby .git/git_share.rb register twitter foo@bar.com"
+                      puts "Enqueuing your message ..."
+                      $LOG.error "Token expired for #{text} from #{user}."
+                      GitShare::Queue.enqueue(:network => 'twitter', :username => user, :text => text)
+                    else
+                      puts "Tweet has been sent!"
+                      $LOG.info "Tweet #{text} from #{user} has been sent."
+                      return true
+                    end
+                  rescue Exception => e
+                    GitShare::Queue.enqueue(:network => 'twitter', :username => user, :text => text)
+                    $LOG.error "Tweet #{text} from #{user} not sent, #{e}"
+                    puts "Tweet not sent"
                   end
-                rescue
-                  puts "Tweet not sent"
                 end
               end
+            else
+              puts "We dont have twitter authorization."
+              puts "Your message is enqueued, and will be sent when we have your authorization."
+              puts "run the following command to request authorization:"
+              puts "/usr/bin/ruby .git/git_share.rb register twitter foo@bar.com"
+              $LOG.error "Tweet #{text} from #{user} not sent, missing token."
+              GitShare::Queue.enqueue(:network => 'twitter', :username => user, :text => text)
             end
-          else
-            puts "We dont have twitter authorization."
-            puts "run: /usr/bin/ruby .git/git_share.rb register_twitter foo@bar.com"
           end
+
+          false
         end
       end
     end

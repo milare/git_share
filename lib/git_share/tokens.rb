@@ -6,7 +6,7 @@ module GitShare
     class << self
       # Return a hash with tokens
       # tokens = read_tokens_file
-      # tokens[:twitter][#{email}] = {:key => "x", :secret => "y"
+      # tokens[:twitter][#{email}] = {:key => "x", :secret => "y"}
       def read_tokens_file
         if (File.exists? TOKENS_FILE) && (File.readable? TOKENS_FILE)
           tokens_file = File.open(TOKENS_FILE)
@@ -20,6 +20,7 @@ module GitShare
           tokens_file.close
           tokens
         else
+          $LOG.warn "Tokens file does not exist."
           nil
         end
       end

@@ -1,1 +1,3 @@
 lib/git_share/.tokens
+lib/git_share/queue/.queue
+lib/git_share.log
