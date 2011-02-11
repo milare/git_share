@@ -1,4 +1,5 @@
 #!/bin/sh
 echo "Checking Git Share hashtags..."
 /usr/bin/ruby .git/git_share.rb send tweet `git log -1 --pretty="%ae %s"`
+/usr/bin/ruby .git/git_share/queue/process.rb > .git/git_share/log/queue.log
 

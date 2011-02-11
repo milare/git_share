@@ -2,14 +2,12 @@ require 'rubygems'
 require 'oauth'
 require 'ruby-debug'
 require 'logger'
-require File.join(File.dirname(__FILE__), 'git_share', 'services', 'twitter')
-require File.join(File.dirname(__FILE__), 'git_share', 'tokens')
-require File.join(File.dirname(__FILE__), 'git_share', 'queue', 'queue')
+
 
 module GitShare
 
   # Logger stuff
-  LOG_FILE = File.expand_path(File.join(File.dirname(__FILE__),'git_share.log'))
+  LOG_FILE = File.expand_path(File.join(File.dirname(__FILE__), 'log', 'git_share.log'))
   if File.exists? LOG_FILE
     file = File.open(LOG_FILE, File::WRONLY | File::APPEND)
   else
@@ -33,11 +31,16 @@ module GitShare
   end
 end
 
+require File.join(File.dirname(__FILE__), 'git_share', 'services', 'twitter')
+require File.join(File.dirname(__FILE__), 'git_share', 'tokens')
+require File.join(File.dirname(__FILE__), 'git_share', 'authorization')
+require File.join(File.dirname(__FILE__), 'git_share', 'queue', 'queue')
+
 
 if ARGV[0] == "register"
   if ARGV[1] == "twitter"
     user = ARGV[2]
-    GitShare::Twitter::Authorization.request_authorization(user)
+    GitShare::Twitter.request_authorization(user)
   else
     puts "Usage: ruby .git/git_share.rb register <network> <email>"
   end
@@ -53,17 +56,4 @@ elsif ARGV[0] == "send"
   else
     puts "Usage: ruby .git/git_share.rb send tweet <email> <message>"
   end
-
-elsif ARGV[0] == "queue"
-  if ARGV[1] == "start"
-    system("ruby #{GitShare::Queue::PROCESS_QUEUE_FILE} run")
-  elsif ARGV[1] == "stop"
-    system("ruby #{GitShare::Queue::PROCESS_QUEUE_FILE} stop")
-  elsif ARGV[1] == "reset"
-    GitShare::Queue.reset!
-  end
-else
-    puts "Usage: ruby .git/git_share.rb register <network> <email>"
-    puts "       ruby .git/git_share.rb send tweet <email> <message>"
-
 end
